@@ -1,4 +1,4 @@
-import {useNavigation, NavigationProp, ParamListBase, StackActionHelpers} from '@react-navigation/native';
+import {useNavigation} from 'react-navigation-hooks';
 import {
   useStartProfiler,
   FlowCommonArgs,
@@ -28,104 +28,50 @@ class UnexpectedPropertyType extends PerformanceProfilerError {
   }
 }
 
-/**
- * Getting the ParamList of CompositeNavigationProp would not work without inferring State and Options, even though they are not used.
- */
-//
-type GetParamListType<T extends NavigationProp<ParamListBase>> = T extends NavigationProp<
-  infer ParamList,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  infer RouteName,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  infer NavigatorID,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  infer State,
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  infer Options
->
-  ? ParamList
-  : unknown;
+interface BaseNavigationSignatures<T> {
+  navigate<TRouteName>(...args: [TRouteName]): void;
 
-interface BaseNavigationSignatures<T extends NavigationProp<ParamListBase>> {
-  navigate<TRouteName extends keyof GetParamListType<T>>(
-    ...args: undefined extends GetParamListType<T>[TRouteName]
-      ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-      : [TRouteName, GetParamListType<T>[TRouteName]]
-  ): void;
-
-  navigate<TRouteName extends keyof GetParamListType<T>>(
+  navigate<TRouteName>(
     route:
       | {
           key: string;
-          params?: GetParamListType<T>[TRouteName];
+          params?: [TRouteName];
         }
       | {
           name: TRouteName;
           key?: string;
-          params: GetParamListType<T>[TRouteName];
+          params: [TRouteName];
         },
   ): void;
 
-  navigate<TRouteName extends keyof GetParamListType<T>>(
-    startTimerArgs: StartTimerArgs,
-    ...args: undefined extends GetParamListType<T>[TRouteName]
-      ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-      : [TRouteName, GetParamListType<T>[TRouteName]]
-  ): void;
+  navigate<TRouteName>(startTimerArgs: StartTimerArgs, ...args: [TRouteName]): void;
 
-  navigate<TRouteName extends keyof GetParamListType<T>>(
+  navigate<TRouteName>(
     startTimerArgs: StartTimerArgs,
     route:
       | {
           key: string;
-          params?: GetParamListType<T>[TRouteName];
+          params?: [TRouteName];
         }
       | {
           name: TRouteName;
           key?: string;
-          params: GetParamListType<T>[TRouteName];
+          params: [TRouteName];
         },
   ): void;
 }
 
-type StackNavigationSignatures<T extends NavigationProp<ParamListBase>> = T extends StackActionHelpers<ParamListBase>
-  ? {
-      replace<TRouteName extends keyof GetParamListType<T>>(
-        ...args: undefined extends GetParamListType<T>[TRouteName]
-          ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-          : [TRouteName, GetParamListType<T>[TRouteName]]
-      ): void;
+interface StackNavigationSignatures<T> {
+  replace<TRouteName>(...args: [TRouteName]): void;
 
-      replace<TRouteName extends keyof GetParamListType<T>>(
-        startTimerArgs: StartTimerArgs,
-        ...args: undefined extends GetParamListType<T>[TRouteName]
-          ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-          : [TRouteName, GetParamListType<T>[TRouteName]]
-      ): void;
+  replace<TRouteName>(startTimerArgs: StartTimerArgs, ...args: [TRouteName]): void;
 
-      push<TRouteName extends keyof GetParamListType<T>>(
-        ...args: undefined extends GetParamListType<T>[TRouteName]
-          ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-          : [TRouteName, GetParamListType<T>[TRouteName]]
-      ): void;
+  push<TRouteName>(...args: [TRouteName]): void;
 
-      push<TRouteName extends keyof GetParamListType<T>>(
-        startTimerArgs: StartTimerArgs,
-        ...args: undefined extends GetParamListType<T>[TRouteName]
-          ? [TRouteName] | [TRouteName, GetParamListType<T>[TRouteName]]
-          : [TRouteName, GetParamListType<T>[TRouteName]]
-      ): void;
-    }
-  : {
-      replace?: never;
-      push?: never;
-    };
+  push<TRouteName>(startTimerArgs: StartTimerArgs, ...args: [TRouteName]): void;
+}
 
-export type ProfiledNavigator<T extends NavigationProp<ParamListBase>> = Omit<T, ProfiledAPISType> &
+export type ProfiledNavigator<T> = Omit<T, ProfiledAPISType> &
   BaseNavigationSignatures<T> &
   StackNavigationSignatures<T>;
 
@@ -148,7 +94,7 @@ function extractStartNavigationArgs(args: any[]): [StartTimerArgs, any[]] {
   return [startTimerArgs, navArgs];
 }
 
-const useProfiledNavigation = <T extends NavigationProp<ParamListBase>>(): ProfiledNavigator<T> => {
+const useProfiledNavigation = <T>(): ProfiledNavigator<T> => {
   const navigation: any = useNavigation();
   const startTimer = useStartProfiler();
   const errorHandler = useErrorHandler();
